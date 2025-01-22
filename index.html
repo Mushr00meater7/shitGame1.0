@@ -25,34 +25,67 @@
 
     <script>
       var playerName = null;
+      var keyDown = null;
+      var pressedKey = null;
       var players = {};
+      var playerPosition = { posX: 0, posY: 0 };
 
       $(document).on("keydown", (e) => {
         if (playerName != null && playerName != "") {
-          $.ajax({
-            url: "http://te1.tunnelin.com:58162/update",
-            type: "POST",
-            contentType: "application/json",
-            data: JSON.stringify({ name: playerName, keyDown: e.key }),
-            success: function (response) {
-              console.warn(response);
-            },
-          });
+          //$.ajax({
+          //  url: "http://te1.tunnelin.com:58162/update",
+          //  type: "POST",
+          //  contentType: "application/json",
+          //  data: JSON.stringify({ name: playerName, keyDown: e.key }),
+          //  success: function (response) {
+          //    console.warn(response);
+          //  },
+          //});
+          pressedKey = e.key;
+          keyDown = true;
+
+          if (pressedKey == "d") {
+            playerPosition["posX"] += 1;
+          } else if (pressedKey == "a") {
+            playerPosition["posX"] -= 1;
+          } else if (pressedKey == "s") {
+            playerPosition["posY"] += 1;
+          } else if (pressedKey == "w") {
+            playerPosition["posY"] -= 1;
+          }
+        }
+      });
+
+      $(document).on("keyup", (e) => {
+        if (playerName != null && playerName != "") {
+          keyDown = false;
+          pressedKey = "";
         }
       });
 
       setInterval(() => {
+        console.log(pressedKey);
         $.ajax({
-          type: "GET",
           url: "http://te1.tunnelin.com:58162/data",
-          success: function (data) {
-            //console.log(data); // show response from the php script.
-            console.log(data);
-            players = data;
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({ name: playerName, position: playerPosition }),
+          success: function (response) {
+            players = response;
           },
         });
+
+        //$.ajax({
+        //  type: "POST",
+        //  url: "http://te1.tunnelin.com:58162/data",
+        //  success: function (data) {
+        //    //console.log(data); // show response from the php script.
+        //    console.log(data);
+        //    players = data;
+        //  },
+        //});
         gameLoop();
-      }, 1000);
+      }, 500);
 
       var canvas = document.getElementById("game");
       var ctx = canvas.getContext("2d");
@@ -61,7 +94,11 @@
         ctx.clearRect(0, 0, 1000000, 1000000);
         for (player in players) {
           var player = players[player];
-          ctx.fillRect(player.posX, player.posY, 10, 10);
+          if (player["name"] != playerName) {
+            ctx.fillRect(player.posX, player.posY, 10, 10);
+          } else if (player["name"] == playerName) {
+            ctx.fillRect(playerPosition.posX, playerPosition.posY, 10, 10);
+          }
         }
       }
 
