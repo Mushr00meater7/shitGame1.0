@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Client</title>
+  </head>
+  <style>
+    #game {
+      background-color: darkgray;
+    }
+  </style>
+  <body>
+    <form
+      id="joinForm"
+      action="http://te1.tunnelin.com:58162/join"
+      method="post"
+    >
+      <input type="text" name="playerName" id="playerName" />
+      <input type="submit" />
+    </form>
+    <canvas id="game"> </canvas>
+
+    <script>
+      var playerName = null;
+      var players = {};
+
+      $(document).on("keydown", (e) => {
+        if (playerName != null && playerName != "") {
+          $.ajax({
+            url: "http://te1.tunnelin.com:58162/update",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ name: playerName, keyDown: e.key }),
+            success: function (response) {
+              console.warn(response);
+            },
+          });
+        }
+      });
+
+      setInterval(() => {
+        $.ajax({
+          type: "GET",
+          url: "http://te1.tunnelin.com:58162/data",
+          success: function (data) {
+            //console.log(data); // show response from the php script.
+            console.log(data);
+            players = data;
+          },
+        });
+        gameLoop();
+      }, 1000);
+
+      var canvas = document.getElementById("game");
+      var ctx = canvas.getContext("2d");
+
+      function gameLoop() {
+        ctx.clearRect(0, 0, 1000000, 1000000);
+        for (player in players) {
+          var player = players[player];
+          ctx.fillRect(player.posX, player.posY, 10, 10);
+        }
+      }
+
+      // Fetch data from the server
+
+      $("#joinForm").submit(function (e) {
+        e.preventDefault(); // avoid to execute the actual submit of the form.
+
+        var form = $(this);
+        var actionUrl = form.attr("action");
+
+        $.ajax({
+          type: "POST",
+          url: actionUrl,
+          data: form.serialize(), // serializes the form's elements.
+          success: function (data) {
+            console.log(data); // show response from the php script.
+            playerName = $("#playerName").val();
+            console.warn(playerName);
+            form.css("display", "none");
+          },
+        });
+      });
+    </script>
+  </body>
+</html>
