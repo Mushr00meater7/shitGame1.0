@@ -30,6 +30,8 @@
       var players = {};
       var playerPosition = { posX: 0, posY: 0 };
 
+      const serverPingRate = 100 / 2;
+
       $(document).on("keydown", (e) => {
         if (playerName != null && playerName != "") {
           //$.ajax({
@@ -62,30 +64,38 @@
           pressedKey = "";
         }
       });
-
+      var countI = 0;
       setInterval(() => {
-        console.log(pressedKey);
-        $.ajax({
-          url: "http://te1.tunnelin.com:58162/data",
-          type: "POST",
-          contentType: "application/json",
-          data: JSON.stringify({ name: playerName, position: playerPosition }),
-          success: function (response) {
-            players = response;
-          },
-        });
-
-        //$.ajax({
-        //  type: "POST",
-        //  url: "http://te1.tunnelin.com:58162/data",
-        //  success: function (data) {
-        //    //console.log(data); // show response from the php script.
-        //    console.log(data);
-        //    players = data;
-        //  },
-        //});
+        countI++;
+        console.log(countI);
         gameLoop();
-      }, 500);
+        if (countI >= serverPingRate) {
+          countI = 0;
+          console.log(pressedKey);
+          $.ajax({
+            url: "http://te1.tunnelin.com:58162/data",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+              name: playerName,
+              position: playerPosition,
+            }),
+            success: function (response) {
+              players = response;
+            },
+          });
+
+          //$.ajax({
+          //  type: "POST",
+          //  url: "http://te1.tunnelin.com:58162/data",
+          //  success: function (data) {
+          //    //console.log(data); // show response from the php script.
+          //    console.log(data);
+          //    players = data;
+          //  },
+          //});
+        }
+      }, 10);
 
       var canvas = document.getElementById("game");
       var ctx = canvas.getContext("2d");
@@ -96,8 +106,14 @@
           var player = players[player];
           if (player["name"] != playerName) {
             ctx.fillRect(player.posX, player.posY, 10, 10);
+            ctx.fillText(player.name, player.posX, player.posY - 10);
           } else if (player["name"] == playerName) {
             ctx.fillRect(playerPosition.posX, playerPosition.posY, 10, 10);
+            ctx.fillText(
+              player.name,
+              playerPosition.posX,
+              playerPosition.posY - 10
+            );
           }
         }
       }
